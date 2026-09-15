@@ -1,0 +1,154 @@
+Panels:
+  - Class: rviz_common/Displays
+    Help Height: 78
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+        - /Crazyflie Map1
+        - /OF Path1
+        - /TF1
+      Splitter Ratio: 0.5
+    Tree Height: 550
+  - Class: rviz_common/Selection
+    Name: Selection
+  - Class: rviz_common/Tool Properties
+    Expanded: []
+    Name: Tool Properties
+    Splitter Ratio: 0.588679
+  - Class: rviz_common/Views
+    Expanded:
+      - /Current View1
+    Name: Views
+    Splitter Ratio: 0.5
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 0.7
+      Class: rviz_default_plugins/Grid
+      Enabled: true
+      Name: Grid
+      Plane: XY
+    - Class: rviz_default_plugins/Map
+      Alpha: 0.7
+      Color Scheme: map
+      Draw Backend: ogre
+      Enabled: true
+      Name: Crazyflie Map
+      Topic:
+        Depth: 5
+        Durability Policy: Transient Local
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /esp/map
+    - Class: rviz_default_plugins/Path
+      Color: 25; 255; 0
+      Enabled: true
+      Line Style: Lines
+      Line Width: 0.03
+      Name: OF Path
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /of/path
+    - Class: rviz_default_plugins/Pose
+      Alpha: 1
+      Axes Length: 0.25
+      Axes Radius: 0.02
+      Color: 255; 128; 0
+      Enabled: true
+      Head Length: 0.15
+      Head Radius: 0.05
+      Name: OF Pose
+      Shaft Length: 0.35
+      Shaft Radius: 0.02
+      Shape: Arrow
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /of/pose
+    - Class: rviz_default_plugins/Range
+      Alpha: 0.6
+      Color: 255; 0; 0
+      Enabled: true
+      Name: Front Range
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /crazyflie/range_front
+    - Class: rviz_default_plugins/Range
+      Alpha: 0.6
+      Color: 0; 255; 0
+      Enabled: true
+      Name: Left Range
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /crazyflie/range_left
+    - Class: rviz_default_plugins/Range
+      Alpha: 0.6
+      Color: 0; 0; 255
+      Enabled: true
+      Name: Back Range
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /crazyflie/range_back
+    - Class: rviz_default_plugins/Range
+      Alpha: 0.6
+      Color: 255; 255; 0
+      Enabled: true
+      Name: Right Range
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /crazyflie/range_right
+    - Class: rviz_default_plugins/TF
+      Enabled: true
+      Frame Timeout: 15
+      Marker Scale: 0.1
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+  Global Options:
+    Background Color: 48; 48; 48
+    Fixed Frame: map
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz_default_plugins/Interact
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+  Views:
+    Current:
+      Class: rviz_default_plugins/TopDownOrtho
+      Name: Current View
+      Scale: 20
+Window Geometry:
+  Displays:
+    collapsed: false
+  Height: 800
+  Hide Left Dock: false
+  Hide Right Dock: false
+  Selection:
+    collapsed: false
+  Tool Properties:
+    collapsed: false
+  Views:
+    collapsed: false
+  Width: 1200
+  X: 100
+  Y: 100
