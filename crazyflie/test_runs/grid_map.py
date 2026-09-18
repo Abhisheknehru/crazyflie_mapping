@@ -22,7 +22,7 @@ class GridMap:
             return iy * self.width + ix
         return None
 
-    def ray(self, x, y, angle, distance, hit):
+    def ray(self, x, y, angle, distance, hit, hit_weight=4):
         if not all(math.isfinite(v) for v in (x, y, angle, distance)) or distance <= 0:
             return
         if self.cell(x, y) is None:
@@ -38,10 +38,14 @@ class GridMap:
                 break
             cells.add(index)
         for index in cells:
-            increment = 4 if hit and index == endpoint else -1
+            increment = hit_weight if hit and index == endpoint else -1
             self.values[index] = max(-10, min(10, self.values[index] + increment))
             self.seen.add(index)
 
     def occupancy(self):
         return [(-1 if i not in self.seen else
                  round(100 / (1 + math.exp(-v)))) for i, v in enumerate(self.values)]
+
+    def clear(self):
+        self.values = [0] * (self.width ** 2)
+        self.seen.clear()

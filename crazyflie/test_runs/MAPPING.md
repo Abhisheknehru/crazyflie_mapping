@@ -1,68 +1,35 @@
-# Initial hand-carried mapping
+# Simple state-estimate mapping
 
-Run start_exploration.sh with your radio URI; it builds the mapper too. After
-estimator settling, hold the drone level with the floor sensors unobstructed.
-In a sourced second terminal run:
+The active mapping pipeline contains only:
 
-```bash
-ros2 run crazyflie multiranger_mapper
-```
+1. `radio_bridge.py`: reads onboard `stateEstimate.x/y/z/yaw` and Multi-ranger
+   values from one Crazyradio connection.
+2. `multiranger_mapper.py`: combines `/crazyflie/pose` with the front, left,
+   back and right ranges to publish `/map`.
+3. RViz: displays `/map` and `/crazyflie/pose` in the `map` frame.
 
-In a sourced third terminal run `rviz2`. Set Fixed Frame to `map`, add a Map
-display on `/map` (Reliable, Transient Local), and a Pose display on
-`/crazyflie/pose`. Move slowly at consistent height and heading. First scan a
-single flat wall and compare its mapped distance/shape with measurements.
-Then try a corner and a short return-to-start route. Double walls on revisits
-indicate localization/alignment errors; a visually plausible map is not proof
-of accurate localization.
-
-Default map is 10 by 10 m centered at the start, with 2 cm cells. Change with
-`--ros-args -p size:=16.0 -p resolution:=0.05`. Sensor offset defaults to 3 cm
-from the body origin in each sensor direction; measure your deck geometry and
-set `-p sensor_offset:=...` accordingly. This approximates the sensors as rays;
-the actual field of view, roll/pitch and individual extrinsics are not modeled.
-
-Pose defaults to /crazyflie/pose because this is timestamped at radio receipt.
-Ranges wait for pose data and use the nearest sample within 0.15 s. There is no
-pose interpolation. All messages must share the ROS clock and map frame.
-
-Minimum-clamped readings are skipped, so sensor error codes do not draw false
-walls. Maximum-clamped ranges clear free cells without adding occupied endpoints.
-Exact maximum-distance walls cannot be distinguished from saturation. A later
-mapper should consume explicit raw range validity as well.
-
-The mapper does not correct pose drift, recognize revisits, plan paths, save
-files, or execute flight commands. Keep it stopped during startup/ground
-handling to avoid drawing those movements. To clear the grid, stop and restart
-the mapper. If you restart the radio bridge, restart the mapper too: the pose
-origin has changed. Record /map, /crazyflie/pose and the four horizontal range
-topics with ros2 bag record for replay; this is not a navigation map-file export.
-
-Validation: 15 unit tests pass across grid, reset/range conversion, and reactive
-policy. Mapper Python compilation passed. ROS middleware, RViz and hardware
-mapping have not been tested in the development environment.
-
-## Preconfigured RViz and mapper
-
-After starting the radio script, replace the separate mapper and RViz commands
-with:
+Run everything with:
 
 ```bash
-source /opt/ros/humble/setup.bash
-source /home/abhishek/eysip_hardware/install/setup.bash
-ros2 launch crazyflie multiranger_mapping.launch.py
+cd /home/abhishek/eysip_hardware
+./src/crazyflie/test_runs/start_mapping.sh radio://0/80/2M/E7E7E7E7E7
 ```
 
-Rebuild once after this update (the radio startup script builds automatically).
-This launches the mapper and RViz with fixed frame `map`, map `/map`, pose
-`/crazyflie/pose`, trajectory `/of/path`, and a top-down view. It opens no radio
-connection. Do not run another mapper alongside this launch.
+Replace the URI if required. Keep the drone stationary while the onboard
+estimator resets and settles. Then carry it level and slowly through the maze.
 
-To open only the configured RViz, with an existing mapper running:
+The default map is 10 by 10 metres with 2 cm cells. Optional launch arguments:
 
 ```bash
-rviz2 -d /home/abhishek/eysip_hardware/src/crazyflie/test_runs/multiranger.rviz
+./src/crazyflie/test_runs/start_mapping.sh \
+  radio://0/80/2M/E7E7E7E7E7 size:=12.0 resolution:=0.02
 ```
 
-A plain `rviz2` command does not automatically select this project configuration;
-use the launch command or `-d` form above.
+The mapper has no loop closure, range-jump filter, wall confirmation, map
+exploration controller, planner, or `/of/pose` dependency. Restart
+the command to reset both the state-estimate origin and occupancy map.
+
+Press Ctrl+C once in the launch terminal to stop. A nonempty map is saved as a
+timestamped PGM/YAML pair under `/home/abhishek/eysip_hardware/maps` by default.
+The terminal prints both complete paths. Override the location with, for example,
+`map_save_prefix:=/tmp/my_maze`.

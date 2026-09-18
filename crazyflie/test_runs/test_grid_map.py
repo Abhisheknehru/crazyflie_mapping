@@ -23,3 +23,9 @@ class GridTests(unittest.TestCase):
 
     def test_restart_is_empty(self):
         self.assertTrue(all(v == -1 for v in GridMap().occupancy()))
+
+    def test_capped_miss_does_not_erase_far_wall(self):
+        g = GridMap()
+        g.ray(0, 0, 0, 1.0, True)
+        g.ray(0, 0, 0, 0.3, False)
+        self.assertGreater(g.occupancy()[g.cell(1, 0)], 90)

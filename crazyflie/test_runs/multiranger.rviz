@@ -63,34 +63,6 @@ Visualization Manager:
       Use Timestamp: false
       Value: true
     - Alpha: 1
-      Buffer Length: 1
-      Class: rviz_default_plugins/Path
-      Color: 25; 255; 0
-      Enabled: true
-      Head Diameter: 0.30000001192092896
-      Head Length: 0.20000000298023224
-      Length: 0.30000001192092896
-      Line Style: Lines
-      Line Width: 0.029999999329447746
-      Name: OF Path
-      Offset:
-        X: 0
-        Y: 0
-        Z: 0
-      Pose Color: 255; 85; 255
-      Pose Style: None
-      Radius: 0.029999999329447746
-      Shaft Diameter: 0.10000000149011612
-      Shaft Length: 0.10000000149011612
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        Filter size: 10
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /of/path
-      Value: true
-    - Alpha: 1
       Axes Length: 0.25
       Axes Radius: 0.019999999552965164
       Class: rviz_default_plugins/Pose
@@ -110,6 +82,65 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /crazyflie/pose
       Value: true
+    - Alpha: 1
+      Arrow Color: 0; 255; 255
+      Arrow Length: 0.10000000149011612
+      Class: rviz_default_plugins/PoseArray
+      Enabled: true
+      Name: MCL Particles
+      Shaft Length: 0.10000000149011612
+      Shaft Radius: 0.019999999552965164
+      Head Length: 0.05000000074505806
+      Head Radius: 0.029999999329447746
+      Shape: Arrow (Flat)
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /crazyflie/particles
+      Value: true
+    - Alpha: 1
+      Axes Length: 0.25
+      Axes Radius: 0.019999999552965164
+      Class: rviz_default_plugins/Pose
+      Color: 0; 255; 0
+      Enabled: true
+      Head Length: 0.15000000596046448
+      Head Radius: 0.05000000074505806
+      Name: Localized Pose
+      Shaft Length: 0.3499999940395355
+      Shaft Radius: 0.019999999552965164
+      Shape: Arrow
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /crazyflie/localized_pose
+      Value: true
+    - Alpha: 1
+      Axes Length: 0.25
+      Axes Radius: 0.019999999552965164
+      Class: rviz_default_plugins/Pose
+      Color: 255; 0; 255
+      Enabled: true
+      Head Length: 0.15000000596046448
+      Head Radius: 0.05000000074505806
+      Name: Goal Pose
+      Shaft Length: 0.3499999940395355
+      Shaft Radius: 0.019999999552965164
+      Shape: Arrow
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /crazyflie/goal_pose
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -121,6 +152,13 @@ Visualization Manager:
       Hide Inactive Objects: true
     - Class: rviz_default_plugins/MoveCamera
     - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/SetGoal
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /crazyflie/goal_pose
   Transformation:
     Current:
       Class: rviz_default_plugins/TF
