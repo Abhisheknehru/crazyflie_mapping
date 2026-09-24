@@ -1,9 +1,4 @@
-"""Publish an already-saved map to /map once, for viewing in RViz.
-
-No live sensors, no mapping -- just loads the newest maze_*.yaml and
-republishes it as a latched OccupancyGrid so it doesn't need
-multiranger_mapper running to be visible.
-"""
+"""Publish one saved occupancy map for RViz without running a mapper."""
 import sys
 
 import rclpy
@@ -20,29 +15,25 @@ class SavedMapPublisher(Node):
         super().__init__('publish_saved_map')
         self.declare_parameter('map_yaml', '')
         self.declare_parameter('maps_dir', 'maps')
-        requested_map = str(self.get_parameter('map_yaml').value).strip()
-        if requested_map:
-            map_path = requested_map
-        else:
-            map_path = pick_latest_map(
-                str(self.get_parameter('maps_dir').value))
-        localization_map = load_map(map_path)
-        map_qos = QoSProfile(
+        requested = str(self.get_parameter('map_yaml').value).strip()
+        map_path = requested or pick_latest_map(
+            str(self.get_parameter('maps_dir').value))
+        saved_map = load_map(map_path)
+
+        qos = QoSProfile(
             depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
-        publisher = self.create_publisher(OccupancyGrid, '/map', map_qos)
-        msg = OccupancyGrid()
-        msg.header.stamp = self.get_clock().now().to_msg()
-        msg.header.frame_id = 'map'
-        msg.info.resolution = localization_map.resolution
-        msg.info.width = msg.info.height = localization_map.width
-        msg.info.origin.position.x = localization_map.origin
-        msg.info.origin.position.y = localization_map.origin
-        msg.info.origin.orientation.w = 1.
-        msg.data = localization_map.occupancy
-        publisher.publish(msg)
-        self.get_logger().info(
-            f'Published {map_path} to /map (latched) -- add a Map display '
-            'in RViz, this node just needs to stay running')
+        self.publisher = self.create_publisher(OccupancyGrid, '/map', qos)
+        message = OccupancyGrid()
+        message.header.stamp = self.get_clock().now().to_msg()
+        message.header.frame_id = 'map'
+        message.info.resolution = saved_map.resolution
+        message.info.width = message.info.height = saved_map.width
+        message.info.origin.position.x = saved_map.origin
+        message.info.origin.position.y = saved_map.origin
+        message.info.origin.orientation.w = 1.0
+        message.data = saved_map.occupancy
+        self.publisher.publish(message)
+        self.get_logger().info(f'Published {map_path} on /map')
 
 
 def main(args=None):
@@ -53,8 +44,8 @@ def main(args=None):
         rclpy.spin(node)
     except (KeyboardInterrupt, ExternalShutdownException):
         pass
-    except FileNotFoundError as exc:
-        print(f'publish_saved_map failed: {exc}', file=sys.stderr, flush=True)
+    except (FileNotFoundError, ValueError) as exc:
+        print(f'publish_saved_map failed: {exc}', file=sys.stderr)
     finally:
         if node is not None:
             node.destroy_node()

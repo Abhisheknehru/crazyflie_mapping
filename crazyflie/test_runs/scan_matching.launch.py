@@ -1,4 +1,4 @@
-"""Saved map, scan-match localizer, and RViz; no mapper or radio owner."""
+"""Launch saved-map visualization and scan matching without a radio owner."""
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
