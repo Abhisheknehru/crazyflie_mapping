@@ -1,5 +1,6 @@
 """Exercise bridge reset and frame math without ROS or radio hardware."""
 import ast
+from collections import deque
 import math
 from pathlib import Path
 from types import SimpleNamespace as NS
@@ -41,7 +42,9 @@ class ResetTests(unittest.TestCase):
     def test_new_origin_and_heading_on_each_instance(self):
         publish = method('publish_pose', Odometry=odometry, PoseStamped=lambda: NS())
         for initial_x in (5., 20.):
-            bridge = NS(origin=None, map_alignment=None, odom_pub=Mock(), pose_pub=Mock())
+            bridge = NS(origin=None, map_alignment=None, odom_pub=Mock(), pose_pub=Mock(),
+                       pose_history=deque(maxlen=20), estimate_frozen=False,
+                       pose_is_frozen=Mock(return_value=False))
             data = {'stateEstimate.x': initial_x, 'stateEstimate.y': 3.,
                     'stateEstimate.z': .2, 'stateEstimate.yaw': 90.}
             publish(bridge, data, None)
@@ -53,6 +56,47 @@ class ResetTests(unittest.TestCase):
             pose = bridge.pose_pub.publish.call_args.args[0].pose
             self.assertAlmostEqual(pose.position.x, 1.)
             self.assertAlmostEqual(pose.position.y, 0.)
+
+
+class PoseFreezeTests(unittest.TestCase):
+    def test_short_history_is_never_frozen(self):
+        is_frozen = method('pose_is_frozen')
+        bridge = NS(pose_history=deque([(1., 2., .3, .4)], maxlen=20),
+                    pose_freeze_epsilon=1e-6)
+        self.assertFalse(is_frozen(bridge))
+
+    def test_identical_samples_are_frozen(self):
+        is_frozen = method('pose_is_frozen')
+        sample = (1.0, -2.0, 0.3, 0.7)
+        bridge = NS(pose_history=deque([sample] * 20, maxlen=20),
+                    pose_freeze_epsilon=1e-6)
+        self.assertTrue(is_frozen(bridge))
+
+    def test_real_jitter_is_not_frozen(self):
+        is_frozen = method('pose_is_frozen')
+        samples = deque(
+            ((1.0 + i * 1e-4, -2.0, 0.3, 0.7) for i in range(20)), maxlen=20)
+        bridge = NS(pose_history=samples, pose_freeze_epsilon=1e-6)
+        self.assertFalse(is_frozen(bridge))
+
+    def test_emergency_land_stops_flying_and_commands_land(self):
+        emergency_land = method('emergency_land')
+        bridge = NS(get_logger=lambda: Mock(), estimate_frozen=False,
+                    flying=True, dry_run=False, origin=(0., 0., .1, 0.),
+                    land_duration=2.0, cf=NS(high_level_commander=Mock()))
+        emergency_land(bridge, 'test reason')
+        bridge.cf.high_level_commander.land.assert_called_once_with(.1, 2.0)
+        self.assertFalse(bridge.flying)
+        self.assertTrue(bridge.estimate_frozen)
+
+    def test_emergency_land_skips_command_in_dry_run(self):
+        emergency_land = method('emergency_land')
+        bridge = NS(get_logger=lambda: Mock(), estimate_frozen=False,
+                    flying=True, dry_run=True, origin=(0., 0., .1, 0.),
+                    land_duration=2.0, cf=NS(high_level_commander=Mock()))
+        emergency_land(bridge, 'test reason')
+        bridge.cf.high_level_commander.land.assert_not_called()
+        self.assertFalse(bridge.flying)
 
 
 class RangeTests(unittest.TestCase):

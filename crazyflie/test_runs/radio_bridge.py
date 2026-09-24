@@ -72,6 +72,8 @@ class RadioBridge(Node):
         self.declare_parameter('goal_topic', '/crazyflie/goal_pose')
         self.declare_parameter('maps_dir', 'maps')
         self.declare_parameter('dry_run', True)
+        self.declare_parameter('pose_freeze_window', 20)
+        self.declare_parameter('pose_freeze_epsilon', 1e-6)
         self.settle_timeout = float(self.get_parameter('settle_timeout').value)
         self.require_initial_pose = bool(
             self.get_parameter('require_initial_pose').value)
@@ -84,6 +86,9 @@ class RadioBridge(Node):
         self.land_duration = float(self.get_parameter('land_duration').value)
         self.goto_duration = float(self.get_parameter('goto_duration').value)
         self.dry_run = bool(self.get_parameter('dry_run').value)
+        pose_freeze_window = int(self.get_parameter('pose_freeze_window').value)
+        self.pose_freeze_epsilon = float(
+            self.get_parameter('pose_freeze_epsilon').value)
         if not self.uri.startswith('radio://'):
             raise ValueError('uri must start with radio://')
         if self.period < 10 or self.period > 200 or self.period % 10:
@@ -95,6 +100,11 @@ class RadioBridge(Node):
                    (self.flight_height, self.takeoff_duration,
                     self.land_duration, self.goto_duration)):
             raise ValueError('Flight height and durations must be finite and positive')
+        if pose_freeze_window < 2 or not (
+                math.isfinite(self.pose_freeze_epsilon) and self.pose_freeze_epsilon > 0):
+            raise ValueError('pose_freeze_window/epsilon must be a valid window and positive epsilon')
+        self.pose_history = deque(maxlen=pose_freeze_window)
+        self.estimate_frozen = False
         self.odom_pub = self.create_publisher(Odometry, '/odom', 10)
         self.pose_pub = self.create_publisher(PoseStamped, '/crazyflie/pose', 10)
         self.range_pubs = {face: self.create_publisher(
@@ -173,6 +183,11 @@ class RadioBridge(Node):
             f'yaw={math.degrees(map_yaw):.1f} deg')
 
     def on_goal(self, msg):
+        if self.estimate_frozen:
+            self.get_logger().error(
+                'goal_pose refused: onboard pose estimate looked frozen/'
+                'unreliable earlier this run -- restart to try again')
+            return
         p, q = msg.pose.position, msg.pose.orientation
         values = (p.x, p.y, q.x, q.y, q.z, q.w)
         norm = q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w
@@ -364,10 +379,42 @@ class RadioBridge(Node):
                 if now - self.last_data.get(kind, self.connected_at) > self.telemetry_timeout:
                     raise RuntimeError(f'{kind} telemetry timed out; check decks and firmware logs')
 
+    def emergency_land(self, reason):
+        self.get_logger().error(f'SAFETY LAND: {reason}')
+        self.estimate_frozen = True
+        if self.flying and not self.dry_run:
+            try:
+                self.cf.high_level_commander.land(
+                    self.origin[2], self.land_duration)
+            except Exception as exc:
+                self.get_logger().error(f'Emergency landing command failed: {exc}')
+        self.flying = False
+
+    def pose_is_frozen(self):
+        # Messages can keep arriving right on schedule (log config alive,
+        # radio link fine) while the underlying onboard estimate has simply
+        # stopped updating -- e.g. a stalled Kalman filter or a dead/loose
+        # IMU. That passes the telemetry-timeout check below (new messages
+        # ARE arriving) but is exactly the "flies on stale data" hazard.
+        # Real telemetry always has some sub-mm/sub-degree jitter even
+        # sitting still; bit-for-bit identical readings over a whole window
+        # is not that -- it's the sensor not actually reporting anything new.
+        if len(self.pose_history) < self.pose_history.maxlen:
+            return False
+        columns = zip(*self.pose_history)
+        return all(max(values) - min(values) < self.pose_freeze_epsilon
+                   for values in columns)
+
     def publish_pose(self, data, stamp):
         x, y, z, yaw = [float(data['stateEstimate.' + k]) for k in ('x', 'y', 'z', 'yaw')]
         if not all(math.isfinite(v) for v in (x, y, z, yaw)):
             raise RuntimeError('Non-finite onboard pose')
+        self.pose_history.append((x, y, z, yaw))
+        if not self.estimate_frozen and self.pose_is_frozen():
+            self.emergency_land(
+                'onboard stateEstimate stopped changing while telemetry '
+                'kept arriving on schedule -- looks like a stalled '
+                'estimator or a dead/loose sensor deck, not a dropped link')
         if self.origin is None:
             self.origin = (x, y, z, math.radians(yaw))
         dx, dy = x - self.origin[0], y - self.origin[1]

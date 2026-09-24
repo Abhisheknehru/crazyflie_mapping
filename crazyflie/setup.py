@@ -15,8 +15,12 @@ setup(
         ('share/' + package_name, ['package.xml']),
         (os.path.join('share', package_name, 'launch'),
             glob('test_runs/*.launch.py')),
+        (os.path.join('share', package_name, 'launch', 'rviz_mapping'),
+            glob('test_runs/flight_tests/rviz_mapping/*.launch.py')),
         (os.path.join('share', package_name, 'rviz'),
             glob('test_runs/*.rviz')),
+        (os.path.join('share', package_name, 'rviz', 'rviz_mapping'),
+            glob('test_runs/flight_tests/rviz_mapping/*.rviz')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -37,7 +41,10 @@ setup(
             'range_monitor = test_runs.range_monitor:main',
             'replay_bag = test_runs.replay_bag:main',
             'map_localizer = test_runs.map_localizer:main',
+            'scan_match_localizer = test_runs.scan_match_localizer:main',
             'publish_saved_map = test_runs.publish_saved_map:main',
+            'rviz_keyboard_mapping = '
+            'test_runs.flight_tests.rviz_mapping.rviz_keyboard_mapping:main',
         ],
     },
 )
