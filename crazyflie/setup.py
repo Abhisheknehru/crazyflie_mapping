@@ -36,6 +36,7 @@ setup(
     entry_points={
         'console_scripts': [
             'multiranger_mapper = test_runs.multiranger_mapper:main',
+            'a_star_planner = test_runs.a_star_planner:main',
             'scan_match_localizer = test_runs.scan_match_localizer:main',
             'publish_saved_map = test_runs.publish_saved_map:main',
             'rviz_keyboard_mapping = '

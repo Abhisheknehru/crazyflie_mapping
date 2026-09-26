@@ -1,0 +1,13 @@
+Metadata-Version: 2.1
+Name: crazyflie
+Version: 0.0.0
+Summary: ROS 2 package for Crazyflie integration
+Home-page: UNKNOWN
+Maintainer: abhishek
+Maintainer-email: abhishekenrhu39@gmail.com
+License: Apache-2.0
+Platform: UNKNOWN
+Provides-Extra: test
+
+UNKNOWN
+

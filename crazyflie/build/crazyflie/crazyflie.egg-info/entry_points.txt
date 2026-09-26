@@ -1,0 +1,7 @@
+[console_scripts]
+a_star_planner = test_runs.a_star_planner:main
+multiranger_mapper = test_runs.multiranger_mapper:main
+publish_saved_map = test_runs.publish_saved_map:main
+rviz_keyboard_mapping = test_runs.flight_tests.rviz_mapping.rviz_keyboard_mapping:main
+scan_match_localizer = test_runs.scan_match_localizer:main
+

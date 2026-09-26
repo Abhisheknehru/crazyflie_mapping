@@ -35,6 +35,27 @@ Visualization Manager:
         Value: /map_updates
       Use Timestamp: false
       Value: true
+    - Alpha: 0.55
+      Class: rviz_default_plugins/Map
+      Color Scheme: map
+      Draw Behind: false
+      Enabled: true
+      Name: Inflated Flyable Region
+      Topic:
+        Depth: 5
+        Durability Policy: Transient Local
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /crazyflie/inflated_map
+      Update Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /crazyflie/inflated_map_updates
+      Use Timestamp: false
+      Value: true
     - Alpha: 0.699999988079071
       Axes Length: 0.18000000715255737
       Axes Radius: 0.014999999664723873
@@ -96,6 +117,28 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /crazyflie/scan_match_points
       Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz_default_plugins/Path
+      Color: 0; 255; 255
+      Enabled: true
+      Head Diameter: 0.06
+      Head Length: 0.08
+      Line Style: Lines
+      Line Width: 0.03
+      Name: A-Star Planned Path
+      Pose Color: 0; 255; 255
+      Pose Style: Arrows
+      Radius: 0.02
+      Shaft Diameter: 0.025
+      Shaft Length: 0.08
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /crazyflie/planned_path
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -107,6 +150,13 @@ Visualization Manager:
       Hide Inactive Objects: true
     - Class: rviz_default_plugins/MoveCamera
     - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/SetGoal
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /crazyflie/navigation_goal
   Transformation:
     Current:
       Class: rviz_default_plugins/TF

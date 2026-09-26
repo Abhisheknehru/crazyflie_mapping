@@ -61,7 +61,8 @@ class ScanMatchLocalizer(Node):
         else:
             map_path = pick_latest_map(
                 str(self.get_parameter('maps_dir').value))
-        self.matcher = CorrelativeScanMatcher(load_map(map_path))
+        self.localization_map = load_map(map_path)
+        self.matcher = CorrelativeScanMatcher(self.localization_map)
         self.alignment = Alignment()
         self.local_pose = None
         self.auto_initial_pose_pending = bool(
@@ -76,6 +77,13 @@ class ScanMatchLocalizer(Node):
         self.alignment_smoothing = float(
             self.get_parameter('alignment_smoothing').value)
         self.last_result = None
+
+        initial_x = float(self.get_parameter('initial_map_x').value)
+        initial_y = float(self.get_parameter('initial_map_y').value)
+        if (self.auto_initial_pose_pending and
+                not self.map_position_is_known_free(initial_x, initial_y)):
+            raise ValueError(
+                'Automatic initial pose is not in known free map space')
 
         self.create_subscription(PoseStamped, '/crazyflie/pose',
                                  self.on_pose, 10)
@@ -137,6 +145,10 @@ class ScanMatchLocalizer(Node):
             return
         map_pose = (msg.pose.pose.position.x, msg.pose.pose.position.y,
                     yaw_from_quaternion(msg.pose.pose.orientation))
+        if not self.map_position_is_known_free(map_pose[0], map_pose[1]):
+            self.get_logger().warning(
+                'Initial pose ignored: position is not in known free space')
+            return
         self.set_alignment_from_map_pose(map_pose)
         self.auto_initial_pose_pending = False
         self.get_logger().info('Initial scan-matcher alignment accepted')
@@ -174,7 +186,8 @@ class ScanMatchLocalizer(Node):
                 yaw_window=float(
                     self.get_parameter('yaw_search_window').value),
                 xy_step=float(self.get_parameter('xy_search_step').value),
-                yaw_step=float(self.get_parameter('yaw_search_step').value))
+                yaw_step=float(self.get_parameter('yaw_search_step').value),
+                candidate_is_valid=self.alignment_places_drone_in_free_space)
             self.last_result = result
             mean_error = result.mean_error
 
@@ -200,6 +213,16 @@ class ScanMatchLocalizer(Node):
         self.publish_localization(points)
         self.error_publisher.publish(Float32(data=float(mean_error)))
         self.accepted_publisher.publish(Bool(data=accepted))
+
+    def alignment_places_drone_in_free_space(self, alignment):
+        """Require the corrected drone pose to remain in known free space."""
+        x, y = transform_point(self.local_pose[:2], alignment)
+        return self.map_position_is_known_free(x, y)
+
+    def map_position_is_known_free(self, x, y):
+        index = self.localization_map.cell(x, y)
+        return (index is not None and
+                self.localization_map.occupancy[index] == 0)
 
     def _smooth_alignment(self, target):
         a = self.alignment_smoothing

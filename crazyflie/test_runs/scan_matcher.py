@@ -91,28 +91,34 @@ class CorrelativeScanMatcher:
         return error / len(points)
 
     def match(self, points, initial, xy_window=.35, yaw_window=.26,
-              xy_step=.05, yaw_step=.052):
+              xy_step=.05, yaw_step=.052, candidate_is_valid=None):
         """Coarse search followed by a smaller refinement search."""
         if not points:
             return MatchResult(initial, math.inf, 0)
 
         coarse = self._search(points, initial, xy_window, yaw_window,
-                              xy_step, yaw_step)
+                              xy_step, yaw_step, candidate_is_valid)
         refined = self._search(points, coarse.alignment,
                                xy_step, yaw_step,
-                               xy_step / 5.0, yaw_step / 5.0)
+                               xy_step / 5.0, yaw_step / 5.0,
+                               candidate_is_valid)
         return refined
 
     def _search(self, points, centre, xy_window, yaw_window,
-                xy_step, yaw_step):
+                xy_step, yaw_step, candidate_is_valid):
         best = Alignment(centre.x, centre.y, centre.yaw)
-        best_error = self.mean_error(points, best)
+        best_error = (self.mean_error(points, best)
+                      if candidate_is_valid is None or
+                      candidate_is_valid(best) else math.inf)
         for dx in _steps(xy_window, xy_step):
             for dy in _steps(xy_window, xy_step):
                 for dyaw in _steps(yaw_window, yaw_step):
                     candidate = Alignment(
                         centre.x + dx, centre.y + dy,
                         _wrap(centre.yaw + dyaw))
+                    if (candidate_is_valid is not None and
+                            not candidate_is_valid(candidate)):
+                        continue
                     error = self.mean_error(points, candidate)
                     if error < best_error:
                         best, best_error = candidate, error
