@@ -4,12 +4,11 @@ from collections import deque
 import math
 import signal
 import sys
-import time
 
 import numpy as np
 import rclpy
 from cflib.utils import uri_helper
-from geometry_msgs.msg import PoseStamped, TwistStamped
+from geometry_msgs.msg import PoseStamped
 from rclpy.node import Node
 from sensor_msgs.msg import Range
 from sensor_msgs_py import point_cloud2
@@ -38,21 +37,6 @@ class MappingPublisher(Node):
                 Range, '/crazyflie/range_' + face, 10)
             for face in ('front', 'left', 'back', 'right')
         }
-        self.navigation_command = None
-        self.navigation_command_at = None
-        self.create_subscription(
-            TwistStamped, '/crazyflie/navigation_velocity',
-            self.on_navigation_velocity, 10)
-
-    def on_navigation_velocity(self, message):
-        self.navigation_command = message.twist
-        self.navigation_command_at = time.monotonic()
-
-    def navigation_velocity(self):
-        if (self.navigation_command_at is None or
-                time.monotonic() - self.navigation_command_at > .5):
-            return None
-        return self.navigation_command
 
     def publish_data(self, position, yaw_degrees, points, ranges):
         stamp = self.get_clock().now().to_msg()
@@ -98,7 +82,6 @@ class RvizMappingWindow(MainWindow):
         self.ros_cleaned_up = False
         self.position_history = deque(maxlen=POSITION_FREEZE_WINDOW)
         self.position_frozen = False
-        self.navigation_was_active = False
         super().__init__(uri)
         self.setWindowTitle('Crazyflie keyboard control + RViz mapping')
 
@@ -160,29 +143,16 @@ class RvizMappingWindow(MainWindow):
 
     def publish_ros(self):
         rclpy.spin_once(self.publisher, timeout_sec=0.0)
-        self.apply_navigation_command()
         self.publisher.publish_data(
             self.canvas.last_pos, self.latest_yaw, self.cloud_points,
             self.latest_ranges)
-
-    def apply_navigation_command(self):
-        command = self.publisher.navigation_velocity()
-        active = command is not None and not self.is_landing
-        if active:
-            self.hover['x'] = float(command.linear.x)
-            self.hover['y'] = float(command.linear.y)
-            self.hover['yaw'] = math.degrees(float(command.angular.z))
-        elif self.navigation_was_active:
-            self.hover['x'] = 0.0
-            self.hover['y'] = 0.0
-            self.hover['yaw'] = 0.0
-        self.navigation_was_active = active
 
     def closeEvent(self, event):
         super().closeEvent(event)
         if event.isAccepted() and not self.ros_cleaned_up:
             self.ros_cleaned_up = True
             self.ros_timer.stop()
+            
             self.publisher.destroy_node()
             rclpy.try_shutdown()
 
